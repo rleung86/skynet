@@ -1,8 +1,10 @@
 package skynet;
 
-import java.util.*;
-import java.io.*;
-import java.math.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 public class Player {
 	
@@ -59,7 +61,6 @@ public class Player {
 	private static Integer[] toDestroy(int SI, Map<Integer, List<Integer>> mapLink, List<Integer> mapGateAway) {
 		//on cherche si la node est dans la mapLink
 		Integer[] result = null;
-		Map<Integer, Map> mapGetAwayMapLink ;
 		if (!mapGateAway.isEmpty()){
 			for (Integer gateAway : mapGateAway) {
 				if (mapLink.containsKey(gateAway)) {
@@ -75,8 +76,14 @@ public class Player {
 			if (result == null){
 				//on supprime par défaut le premier GateAway et le premier lien vers GateWay
 				result = new Integer[2];
-				result[0] = mapGateAway.get(0);
-				result[1] = mapLink.get(mapGateAway.get(0)).get(0);
+				int i=0;
+				while(true) {
+					result[0] = mapGateAway.get(i);
+					if (!mapLink.get(mapGateAway.get(i)).isEmpty()){
+						result[1] = mapLink.get(mapGateAway.get(i)).get(0);
+						return result;
+					}
+				}
 			}
 			
 		}
