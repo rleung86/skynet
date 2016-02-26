@@ -90,5 +90,11 @@ public class Player {
 		return result;
 	}
 	
+	private boolean checkSonNode(int SI,  List<Integer> mapLinkGateAway) {
+		if (mapLinkGateAway.contains(SI))
+			return true;
+		return false; 
+	}
+	
 	
 }
