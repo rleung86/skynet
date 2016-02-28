@@ -7,94 +7,102 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class Player {
-	
 
 	public static void main(String args[]) {
-        Scanner in = new Scanner(System.in);
-        int N = in.nextInt(); // the total number of nodes in the level, including the gateways
-        int L = in.nextInt(); // the number of links
-        int E = in.nextInt(); // the number of exit gateways
-        
-        Map<Integer, List<Integer>> mapLink = new HashMap<Integer ,List<Integer>>();
-        List<Integer> mapGateAway = new ArrayList<Integer>();
-        List<Integer> tmpListMapLink;
-        for (int i = 0; i < L; i++) {
-            int N1 = in.nextInt(); // N1 and N2 defines a link between these nodes
-            int N2 = in.nextInt();
-            
-            if (mapLink.containsKey(N1))
-            	mapLink.get(N1).add(N2);
-            else {
-            	tmpListMapLink = new ArrayList<Integer>();
-            	tmpListMapLink.add(N2);
-            	mapLink.put(N1, tmpListMapLink );
-            }
-            if (mapLink.containsKey(N2))
-            	mapLink.get(N2).add(N1);
-            else {
-            	tmpListMapLink = new ArrayList<Integer>();
-            	tmpListMapLink.add(N1);
-            	mapLink.put(N2, tmpListMapLink);
-            }
-        }
-        for (int i = 0; i < E; i++) {
-            int EI = in.nextInt(); // the index of a gateway node
-            mapGateAway.add(EI);
-        }
+		Player instancePlayer = new Player();
+		Scanner in = new Scanner(System.in);
+		int N = in.nextInt(); // the total number of nodes in the level,
+								// including the gateways
+		int L = in.nextInt(); // the number of links
+		int E = in.nextInt(); // the number of exit gateways
 
-        // game loop
-        while (true) {
-            int SI = in.nextInt(); // The index of the node on which the Skynet agent is positioned this turn
+		Map<Integer, List<Integer>> mapLink = new HashMap<Integer, List<Integer>>();
+		List<Integer> mapGateAway = new ArrayList<Integer>();
+		List<Integer> tmpListMapLink;
+		List<Node> nodeTree;
+		for (int i = 0; i < L; i++) {
+			int N1 = in.nextInt(); // N1 and N2 defines a link between these
+									// nodes
+			int N2 = in.nextInt();
+			if (mapLink.containsKey(N1))
+				mapLink.get(N1).add(N2);
+			else {
+				tmpListMapLink = new ArrayList<Integer>();
+				tmpListMapLink.add(N2);
+				mapLink.put(N1, tmpListMapLink);
 
-            Integer[] node = toDestroy(SI, mapLink, mapGateAway);
-            
-            System.out.println(node[0] + " "+ node[1]);
-            
-            List<Integer> tmpList = mapLink.get(node[0]);
-            tmpList.remove(node[1]);
-            mapLink.get(node[1]);
-            tmpList.remove(node[0]);
-            
-        }
-    }
-
-	private static Integer[] toDestroy(int SI, Map<Integer, List<Integer>> mapLink, List<Integer> mapGateAway) {
-		//on cherche si la node est dans la mapLink
-		Integer[] result = null;
-		if (!mapGateAway.isEmpty()){
-			for (Integer gateAway : mapGateAway) {
-				if (mapLink.containsKey(gateAway)) {
-					List<Integer> list = mapLink.get(gateAway);
-					if (list.contains(SI)) {
-						result = new Integer[2];
-						result[0]=gateAway;
-						result[1]=SI;
-						return result;
-					} 
-				}
 			}
-			if (result == null){
-				//on supprime par défaut le premier GateAway et le premier lien vers GateWay
-				result = new Integer[2];
-				int i=0;
-				while(true) {
-					result[0] = mapGateAway.get(i);
-					if (!mapLink.get(mapGateAway.get(i)).isEmpty()){
-						result[1] = mapLink.get(mapGateAway.get(i)).get(0);
-						return result;
-					}
-				}
+			if (mapLink.containsKey(N2))
+				mapLink.get(N2).add(N1);
+			else {
+				tmpListMapLink = new ArrayList<Integer>();
+				tmpListMapLink.add(N1);
+				mapLink.put(N2, tmpListMapLink);
 			}
-			
 		}
-		return result;
+		for (int i = 0; i < E; i++) {
+			int EI = in.nextInt(); // the index of a gateway node
+			mapGateAway.add(EI);
+		}
+
+		// game loop
+		while (true) {
+			int SI = in.nextInt(); // The index of the node on which the Skynet
+									// agent is positioned this turn
+			nodeTree = new ArrayList<Node>(); // la liste de ttes les
+												// possibilités
+
+			Node nodeSI = instancePlayer.new Node(SI);
+			// on récupère la liste des connections de ce SI, on itere pour
+			// chaque connection et on crée autant de node qu'il y a d'element
+			// fils
+			constructNodeTree(nodeTree, nodeSI, mapLink, SI, mapGateAway);
+
+			Node tmpNode = nodeTree.get(0);
+			for (Node node : nodeTree) {
+				if (node.idNodeAjoute.size() < tmpNode.idNodeAjoute.size()) {
+					tmpNode = node;
+				}
+			}
+
+			System.out.println(tmpNode.id + " " + tmpNode.idNodeAjoute.get(0));
+
+			List<Integer> tmpList = mapLink.get(tmpNode.id);
+			tmpList.remove(tmpNode.idNodeAjoute.get(0));
+			mapLink.get(tmpNode.idNodeAjoute.get(0));
+			tmpList.remove(tmpNode.id);
+
+		}
 	}
-	
-	private boolean checkSonNode(int SI,  List<Integer> mapLinkGateAway) {
-		if (mapLinkGateAway.contains(SI))
-			return true;
-		return false; 
+
+	public class Node {
+		List<Integer> idNodeAjoute;
+
+		int id;
+
+		public Node(int id) {
+			this.id = id;
+			idNodeAjoute = new ArrayList<Integer>();
+		}
+
 	}
-	
-	
+
+	private static void constructNodeTree(List<Node> nodeTree, Node nodeSI, Map<Integer, List<Integer>> mapLink,
+			Integer nodeFilleId, List<Integer> mapGateAway) {
+		if (mapGateAway.contains(nodeFilleId)) {
+			nodeTree.add(nodeSI);
+		} else {
+			// on itere autours de la liste des connections du noeud
+			List<Integer> nodesfillesList = mapLink.get(new Integer(nodeFilleId));
+
+			if (!nodesfillesList.isEmpty()) {
+				for (Integer linkNodeFille : nodesfillesList) {
+					nodeSI.idNodeAjoute.add(linkNodeFille);
+					constructNodeTree(nodeTree, nodeSI, mapLink, linkNodeFille, mapGateAway);
+				}
+			}
+
+		}
+	}
+
 }
