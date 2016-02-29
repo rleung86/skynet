@@ -15,6 +15,12 @@ public class Player {
 								// including the gateways
 		int L = in.nextInt(); // the number of links
 		int E = in.nextInt(); // the number of exit gateways
+		List<Node> nodes = new ArrayList<Node>();
+		
+		for (int i = 0; i< N; i++) {
+			nodes.add(instancePlayer.new Node(i));
+		}
+			
 
 		Map<Integer, List<Integer>> mapLink = new HashMap<Integer, List<Integer>>();
 		List<Integer> mapGateAway = new ArrayList<Integer>();
@@ -41,68 +47,101 @@ public class Player {
 			}
 		}
 		for (int i = 0; i < E; i++) {
-			int EI = in.nextInt(); // the index of a gateway node
+			int EI = in.nextInt(); 
 			mapGateAway.add(EI);
 		}
 
+		nodeTree = new ArrayList<Node>(); 
+		
+		constructNodeTree(nodeTree,mapLink, mapGateAway, nodes);
+
 		// game loop
 		while (true) {
-			int SI = in.nextInt(); // The index of the node on which the Skynet
-									// agent is positioned this turn
-			nodeTree = new ArrayList<Node>(); // la liste de ttes les
-												// possibilités
-
-			Node nodeSI = instancePlayer.new Node(SI);
-			// on récupère la liste des connections de ce SI, on itere pour
-			// chaque connection et on crée autant de node qu'il y a d'element
-			// fils
-			constructNodeTree(nodeTree, nodeSI, mapLink, SI, mapGateAway);
-
-			Node tmpNode = nodeTree.get(0);
-			for (Node node : nodeTree) {
-				if (node.idNodeAjoute.size() < tmpNode.idNodeAjoute.size()) {
-					tmpNode = node;
-				}
-			}
-
-			System.out.println(tmpNode.id + " " + tmpNode.idNodeAjoute.get(0));
-
-			List<Integer> tmpList = mapLink.get(tmpNode.id);
-			tmpList.remove(tmpNode.idNodeAjoute.get(0));
-			mapLink.get(tmpNode.idNodeAjoute.get(0));
-			tmpList.remove(tmpNode.id);
+			int SI = in.nextInt(); 
+			
+			 Integer[] node = toDestroy(SI, mapLink, mapGateAway, nodeTree);
+	            
+	            System.out.println(node[0] + " "+ node[1]);
+	            
+	            List<Integer> tmpList = mapLink.get(node[0]);
+	            tmpList.remove(node[1]);
+	            tmpList = mapLink.get(node[1]);
+	            tmpList.remove(node[0]);
+	            
+	            if (nodes.get(node[0]).idNodeAjoute.size()>1 )
+            		nodes.get(node[0]).idNodeAjoute.remove(0);
+	            else 
+	            	nodeTree.remove(nodes.get(node[0]));
 
 		}
 	}
 
 	public class Node {
 		List<Integer> idNodeAjoute;
-
 		int id;
-
 		public Node(int id) {
 			this.id = id;
 			idNodeAjoute = new ArrayList<Integer>();
 		}
+		
+		public List<Integer> getIdNodeAjoute() {
+			return idNodeAjoute;
+		}
+		public void setIdNodeAjoute(List<Integer> idNodeAjoute) {
+			this.idNodeAjoute = idNodeAjoute;
+		}
 
 	}
 
-	private static void constructNodeTree(List<Node> nodeTree, Node nodeSI, Map<Integer, List<Integer>> mapLink,
-			Integer nodeFilleId, List<Integer> mapGateAway) {
-		if (mapGateAway.contains(nodeFilleId)) {
-			nodeTree.add(nodeSI);
-		} else {
-			// on itere autours de la liste des connections du noeud
-			List<Integer> nodesfillesList = mapLink.get(new Integer(nodeFilleId));
-
-			if (!nodesfillesList.isEmpty()) {
-				for (Integer linkNodeFille : nodesfillesList) {
-					nodeSI.idNodeAjoute.add(linkNodeFille);
-					constructNodeTree(nodeTree, nodeSI, mapLink, linkNodeFille, mapGateAway);
+	private static void constructNodeTree(List<Node> nodeTree, Map<Integer, List<Integer>> mapLink,
+			List<Integer> mapGateAway, List<Node> nodes) {
+		
+		for ( Integer gaId : mapGateAway) {
+			if ( mapLink.containsKey(gaId)) {
+				//on itère autours des node enfants de GA et on rajoute le noeud 
+				for ( int i =0; i < mapLink.get(gaId).size(); i++) {
+					Integer noeudEnfantId = mapLink.get(gaId).get(i);
+						
+						nodes.get(noeudEnfantId).idNodeAjoute.add(gaId);
+						
+						if(!nodeTree.contains(nodes.get(noeudEnfantId))) {
+							nodeTree.add(nodes.get(noeudEnfantId));
+						}
 				}
 			}
-
 		}
+	}
+	
+	
+	private static Integer[] toDestroy(int SI, Map<Integer, List<Integer>> mapLink, List<Integer> mapGateAway,
+			List<Node> nodeTree) {
+		Integer[] result = null;
+
+		if (!mapGateAway.isEmpty()) {
+			for (Integer gateAway : mapGateAway) {
+				if (mapLink.containsKey(gateAway)) {
+					List<Integer> listConnectedToGA = mapLink.get(gateAway);
+					if (listConnectedToGA.contains(new Integer(SI))) {
+						result = new Integer[2];
+						result[0] = gateAway;
+						result[1] = SI;
+						return result;
+					}
+				}
+			}
+			if (result == null) {
+				result = new Integer[2];
+				
+				Node selectedNode = nodeTree.get(0);
+				for (int i = 0; i < nodeTree.size(); i++) {
+					if (selectedNode.idNodeAjoute.size() < nodeTree.get(i).idNodeAjoute.size())
+						selectedNode = nodeTree.get(i);
+				}
+				result[0] = selectedNode.id;
+				result[1] = selectedNode.idNodeAjoute.get(0);
+			}
+		}
+		return result;
 	}
 
 }
